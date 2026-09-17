@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-surface-50 text-charcoal-900 antialiased font-sans min-h-screen selection:bg-brand-100 selection:text-brand-900;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+
+  .glass-card-subtle {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(244, 244, 245, 0.8);
+  }
+}
+
+/* Custom smooth transitions and focus ring behavior */
+:focus-visible {
+  outline: 2px solid #16A34A;
+  outline-offset: 2px;
+}

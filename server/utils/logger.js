@@ -1,0 +1,16 @@
+/**
+ * Server Logger Utility (Phase 2 Foundation)
+ */
+const logger = {
+  info: (message, meta = {}) => {
+    console.log(`[INFO] ${new Date().toISOString()} - ${message}`, meta);
+  },
+  error: (message, error = {}) => {
+    console.error(`[ERROR] ${new Date().toISOString()} - ${message}`, error.message || error);
+  },
+  warn: (message, meta = {}) => {
+    console.warn(`[WARN] ${new Date().toISOString()} - ${message}`, meta);
+  },
+};
+
+module.exports = logger;

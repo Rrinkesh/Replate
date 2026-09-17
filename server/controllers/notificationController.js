@@ -1,0 +1,165 @@
+const Notification = require('../models/Notification');
+const User = require('../models/User');
+
+/**
+ * Helper: Find authenticated MongoDB user from req.user
+ */
+const getAuthenticatedMongoUser = async (req) => {
+  const firebaseUid = req.user?.uid || req.user?.firebaseUid;
+  if (!firebaseUid) {
+    const err = new Error('Unauthorized - Firebase user token missing');
+    err.statusCode = 401;
+    throw err;
+  }
+
+  let mongoUser = await User.findOne({ firebaseUid });
+  if (!mongoUser) {
+    mongoUser = await User.create({
+      firebaseUid,
+      email: req.user.email || 'user@replate.org',
+      name: req.user.name || 'RePlate User',
+      role: 'RECIPIENT',
+    });
+  }
+
+  return mongoUser;
+};
+
+/**
+ * @desc    Get user notifications & unread count
+ * @route   GET /api/notifications
+ * @access  Private
+ */
+const getNotifications = async (req, res, next) => {
+  try {
+    const mongoUser = await getAuthenticatedMongoUser(req);
+
+    const notifications = await Notification.find({ userId: mongoUser._id })
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    const unreadCount = await Notification.countDocuments({
+      userId: mongoUser._id,
+      isRead: false,
+    });
+
+    res.status(200).json({
+      success: true,
+      count: notifications.length,
+      unreadCount,
+      notifications,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Mark a single notification as read
+ * @route   PUT /api/notifications/:id/read
+ * @access  Private
+ */
+const markAsRead = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const mongoUser = await getAuthenticatedMongoUser(req);
+
+    const notification = await Notification.findById(id);
+    if (!notification) {
+      res.status(404);
+      throw new Error(`Notification '${id}' not found`);
+    }
+
+    if (notification.userId.toString() !== mongoUser._id.toString()) {
+      res.status(403);
+      throw new Error('Forbidden - You can only update your own notifications');
+    }
+
+    notification.isRead = true;
+    await notification.save();
+
+    const unreadCount = await Notification.countDocuments({
+      userId: mongoUser._id,
+      isRead: false,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Notification marked as read',
+      unreadCount,
+      notification,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Mark all notifications for authenticated user as read
+ * @route   PUT /api/notifications/read-all
+ * @access  Private
+ */
+const markAllAsRead = async (req, res, next) => {
+  try {
+    const mongoUser = await getAuthenticatedMongoUser(req);
+
+    await Notification.updateMany(
+      { userId: mongoUser._id, isRead: false },
+      { $set: { isRead: true } }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'All notifications marked as read',
+      unreadCount: 0,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Delete a notification by ID
+ * @route   DELETE /api/notifications/:id
+ * @access  Private
+ */
+const deleteNotification = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const mongoUser = await getAuthenticatedMongoUser(req);
+
+    const notification = await Notification.findById(id);
+    if (!notification) {
+      res.status(404);
+      throw new Error(`Notification '${id}' not found`);
+    }
+
+    if (notification.userId.toString() !== mongoUser._id.toString()) {
+      res.status(403);
+      throw new Error('Forbidden - You can only delete your own notifications');
+    }
+
+    await notification.deleteOne();
+
+    const unreadCount = await Notification.countDocuments({
+      userId: mongoUser._id,
+      isRead: false,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Notification deleted successfully',
+      id,
+      unreadCount,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  getNotifications,
+  markAsRead,
+  markAllAsRead,
+  deleteNotification,
+};

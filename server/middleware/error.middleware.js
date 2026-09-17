@@ -1,0 +1,27 @@
+/**
+ * 404 Route Not Found Middleware
+ */
+const notFound = (req, res, next) => {
+  const error = new Error(`API route not found - ${req.originalUrl}`);
+  res.status(404);
+  next(error);
+};
+
+/**
+ * Centralized Express Error Handler
+ * Returns consistent JSON response format across the API
+ */
+const errorHandler = (err, req, res, next) => {
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+
+  res.status(statusCode).json({
+    success: false,
+    message: err.message || 'Something went wrong on the server',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+  });
+};
+
+module.exports = {
+  notFound,
+  errorHandler,
+};
