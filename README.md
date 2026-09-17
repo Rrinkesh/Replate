@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # RePlate — Food-Surplus Management & Recovery Platform
 
 > **"Good food deserves another plate."**
@@ -186,3 +187,6 @@ To verify server operation and connection status:
 
 ## 📜 License
 Copyright © 2026 RePlate. All rights reserved.
+=======
+# Replate
+>>>>>>> f7d1ffe967e0d7ca3af73fd87983eb59d620408b
